@@ -21,7 +21,7 @@ except NameError:
     def isstr(s):
         return isinstance(s, str)
 
-# from simpletraj import trajectory
+import pytraj
 
 from flask import Flask
 from flask import send_from_directory
@@ -242,9 +242,37 @@ def dir(root="", path=""):
 # trajectory server
 #####################
 
-
-import pytraj
-TOP = pytraj.load_topology('data/ala3.pdb')
+def parse_args():
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="")
+    parser.add_argument(
+        'struc',
+        type=str,
+        nargs='?',
+        default="",
+        help="Path to a structure/topology file. Supported are pdb, gro and cif files. The file must be included within the current working directory (cwd) or a sub directory.")
+    parser.add_argument(
+        'traj',
+        type=str,
+        nargs='?',
+        default="",
+        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files. The file must be included within the current working directory (cwd) or a sub directory.")
+    parser.add_argument(
+        '--cfg',
+        type=str,
+        help="Path to a config file. See https://github.com/arose/mdsrv/blob/master/app.cfg.sample for an example.")
+    parser.add_argument(
+        '--host',
+        type=str,
+        default="127.0.0.1",
+        help="Host for the server. The default is 127.0.0.1/localhost. To make the server available to other clients set to your IP address or to 0.0.0.0 for automatic host determination. Is overwritten by the PORT in a config file.")
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=0,
+        help="Port to bind the server to. The default is 0 for automatic choosing of a free port. Fails when the given port is already in use on your machine. Is overwritten by the PORT in a config file.")
+    args = parser.parse_args()
+    return args
 
 
 class TrajectoryCache(pytraj.TrajectoryIterator):
@@ -269,9 +297,8 @@ class TrajectoryCache(pytraj.TrajectoryIterator):
             array.array("f", frame.xyz.flatten()).tobytes()
         )
 
-TRAJ_CACHE = TrajectoryCache(top=TOP)
-print('TRAJ_CACHE', TRAJ_CACHE)
-
+args = parse_args()
+TRAJ_CACHE = TrajectoryCache(top=args.struc)
 
 @app.route('/traj/frame/<int:frame>/<root>/<path:filename>', methods=['POST'])
 @requires_auth
@@ -357,37 +384,6 @@ def patch_socket_bind(on_bind):
     socketserver.TCPServer.server_bind = socket_bind_wrapper
 
 
-def parse_args():
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description="")
-    parser.add_argument(
-        'struc',
-        type=str,
-        nargs='?',
-        default="",
-        help="Path to a structure/topology file. Supported are pdb, gro and cif files. The file must be included within the current working directory (cwd) or a sub directory.")
-    parser.add_argument(
-        'traj',
-        type=str,
-        nargs='?',
-        default="",
-        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files. The file must be included within the current working directory (cwd) or a sub directory.")
-    parser.add_argument(
-        '--cfg',
-        type=str,
-        help="Path to a config file. See https://github.com/arose/mdsrv/blob/master/app.cfg.sample for an example.")
-    parser.add_argument(
-        '--host',
-        type=str,
-        default="127.0.0.1",
-        help="Host for the server. The default is 127.0.0.1/localhost. To make the server available to other clients set to your IP address or to 0.0.0.0 for automatic host determination. Is overwritten by the PORT in a config file.")
-    parser.add_argument(
-        '--port',
-        type=int,
-        default=0,
-        help="Port to bind the server to. The default is 0 for automatic choosing of a free port. Fails when the given port is already in use on your machine. Is overwritten by the PORT in a config file.")
-    args = parser.parse_args()
-    return args
 
 
 def app_config(path):
@@ -403,6 +399,12 @@ def entry_point():
 
 def main():
     args = parse_args()
+    print(args.struc, args.traj)
+    traj = pytraj.iterload(args.traj, args.struc)
+    tn = '__tmp_pytraj.pdb'
+    traj[:1].save(tn, overwrite=True)
+    args.struc = tn
+
     app_config(args.cfg)
     DATA_DIRS = app.config.get("DATA_DIRS", {})
     DATA_DIRS.update({
@@ -423,4 +425,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        try:
+            os.remove('__tmp_pytraj.pdb')
+        except OSError:
+            print("hello")
