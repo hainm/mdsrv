@@ -252,7 +252,25 @@ def dir( root="", path="" ):
 # trajectory server
 #####################
 
-TRAJ_CACHE = trajectory.TrajectoryCache()
+
+import pytraj
+
+class TrajectoryCache(pytraj.TrajectoryIterator):
+    def get(self, path):
+        return self
+
+    def get_frame_string(self, index, **kwargs):
+        import array
+
+        frame = self[index]
+        return (
+            array.array( "i", [1, ] ).tostring() +
+            array.array( "f", [frame.time,]).tostring() +
+            array.array( "f", frame.box.values.flatten() ).tostring() +
+            array.array( "f", frame.xyz.flatten() ).tostring()
+        )
+
+TRAJ_CACHE = TrajectoryCache()
 
 @app.route( '/traj/frame/<int:frame>/<root>/<path:filename>', methods=['POST'] )
 @requires_auth
@@ -283,7 +301,7 @@ def traj_numframes( root, filename ):
         path = os.path.join( directory, filename )
     else:
         return
-    return str( TRAJ_CACHE.get( path ).numframes )
+    return str( TRAJ_CACHE.get( path ).n_frames)
 
 
 @app.route( '/traj/path/<int:index>/<root>/<path:filename>', methods=['POST'] )
