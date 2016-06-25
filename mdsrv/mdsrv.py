@@ -302,7 +302,7 @@ class TrajectoryCache(pytraj.TrajectoryIterator):
         return (
             array.array("i", [self.n_frames, ]).tobytes() +
             array.array("f", [frame.time, ]).tobytes() +
-            array.array("f", frame.box.values.flatten()).tobytes() +
+            array.array("f", frame.box.to_recip()[0].flatten()).tobytes() +
             array.array("f", frame.xyz.flatten()).tobytes()
         )
 
