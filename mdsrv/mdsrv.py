@@ -24,6 +24,7 @@ except NameError:
         return isinstance(s, str)
 
 import pytraj
+from .contrib import RemoteTrajectoryIterator
 
 from flask import Flask
 from flask import send_from_directory
@@ -286,51 +287,8 @@ def parse_args():
     return args
 
 
-class TrajectoryCache(pytraj.TrajectoryIterator):
-
-    count = 0
-    def get(self, path):
-        if self.count == 0:
-            print('count', self.count)
-            self._load(path)
-            self.count += 1
-
-        return self
-
-    def get_frame_string(self, index, **kwargs):
-
-        frame = self[index]
-        return (
-            array.array("i", [self.n_frames, ]).tobytes() +
-            array.array("f", [frame.time, ]).tobytes() +
-            array.array("f", frame.box.to_recip()[0].flatten()).tobytes() +
-            array.array("f", frame.xyz.flatten()).tobytes()
-        )
-
-    def get_path(self, atom_index, frame_indices=None):
-        if frame_indices is not None:
-            size = len(frame_indices)
-            frame_indices = map(int, frame_indices)
-        else:
-            size = self.n_frames
-            frame_indices  = range(size)
-
-        path = np.zeros((size, 3), dtype=np.float32 )
-
-        for i in frame_indices:
-            frame = self[i]
-            box = frame.box.to_recip()
-            time = frame.time
-            coords = frame.xyz
-            path[i] = coords[atom_index]
-        return path
-
-    def get_path_string(self, atom_index, frame_indices=None):
-        path = self.get_path( atom_index, frame_indices=frame_indices )
-        return array.array( "f", path.flatten() ).tostring()
-
 args = parse_args()
-TRAJ_CACHE = TrajectoryCache(top=args.struc)
+TRAJ_REMOTE = RemoteTrajectoryIterator(top=args.struc)
 
 @app.route('/traj/frame/<int:frame>/<root>/<path:filename>', methods=['POST'])
 @requires_auth
@@ -347,7 +305,7 @@ def traj_frame(frame, root, filename):
             [int(y) for y in x.split(",")]
             for x in atom_indices.split(";")
         ]
-    return TRAJ_CACHE.get(path).get_frame_string(
+    return TRAJ_REMOTE.get(path).get_frame_string(
         frame, atom_indices=atom_indices
     )
 
@@ -361,7 +319,7 @@ def traj_numframes(root, filename):
         path = os.path.join(directory, filename)
     else:
         return
-    return str(TRAJ_CACHE.get(path).n_frames)
+    return str(TRAJ_REMOTE.get(path).n_frames)
 
 
 @app.route('/traj/path/<int:index>/<root>/<path:filename>', methods=['POST'])
@@ -376,7 +334,7 @@ def traj_path(index, root, filename):
     frame_indices = request.form.get("frameIndices")
     if frame_indices:
         frame_indices = None
-    return TRAJ_CACHE.get(path).get_path_string(
+    return TRAJ_REMOTE.get(path).get_path_string(
         index, frame_indices=frame_indices
     )
 
