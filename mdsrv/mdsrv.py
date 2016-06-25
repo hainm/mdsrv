@@ -283,6 +283,10 @@ def parse_args():
         '--remote',
         action='store_true',
         help="remote with port forwarding")
+    parser.add_argument(
+        '--no-browser',
+        action='store_true',
+        help="")
     args = parser.parse_args()
     return args
 
@@ -342,7 +346,7 @@ def traj_path(index, root, filename):
 ############################
 # main
 ############################
-def get_remote_loging(port=8895):
+def get_remote_login(port=8895):
     import os, socket
 
     username = os.getlogin()
@@ -360,20 +364,23 @@ def get_url(host, port, struc=None, traj=None):
             url += "&traj=file://cwd/" + traj
     return url
 
-def open_browser(app, host, port, struc=None, traj=None, remote=False):
+def open_browser(app, host, port, struc=None, traj=None, remote=False, browser=True):
     url = get_url(host, port, struc=struc, traj=traj)
+    print(url)
+
     if remote:
         print("\n")
         print("copy and paste below to your local machine terminal")
-        get_remote_loging(port=port)
+        get_remote_login(port=port)
         print("\nThen copy and paste below to your web browser in local machine")
         print(url)
         print("\n")
     else:
-        if not app.config.get("BROWSER_OPENED", False):
-            import webbrowser
-            webbrowser.open(url, new=2, autoraise=True)
-            app.config.BROWSER_OPENED = True
+        if browser:
+            if not app.config.get("BROWSER_OPENED", False):
+                import webbrowser
+                webbrowser.open(url, new=2, autoraise=True)
+                app.config.BROWSER_OPENED = True
 
 
 # based on http://stackoverflow.com/a/27598916
@@ -393,9 +400,6 @@ def patch_socket_bind(on_bind):
         socketserver.TCPServer.server_bind = original_socket_bind
         return ret
     socketserver.TCPServer.server_bind = socket_bind_wrapper
-
-
-
 
 def app_config(path):
     if path:
@@ -423,8 +427,9 @@ def main():
     })
     app.config["DATA_DIRS"] = DATA_DIRS
 
+    browser = not args.no_browser
     def on_bind(host, port):
-        open_browser(app, host, port, args.struc, args.traj, args.remote)
+        open_browser(app, host, port, args.struc, args.traj, args.remote, browser)
     patch_socket_bind(on_bind)
     app.run(
         debug=app.config.get('DEBUG', False),
