@@ -352,12 +352,16 @@ def get_remote_loging(port=8895):
             port=port)
     print(client_cm)
 
-def open_browser(app, host, port, struc=None, traj=None, remote=False):
+def get_url(host, port, struc=None, traj=None):
     url = "http://" + host + ":" + str(port) + "/webapp"
     if struc:
         url += "?struc=file://cwd/" + struc
         if traj:
             url += "&traj=file://cwd/" + traj
+    return url
+
+def open_browser(app, host, port, struc=None, traj=None, remote=False):
+    url = get_url(host, port, struc=struc, traj=traj)
     if remote:
         print("\n")
         print("copy and paste below to your local machine terminal")
