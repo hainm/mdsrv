@@ -361,6 +361,15 @@ def traj_path(index, root, filename):
 ############################
 # main
 ############################
+def get_remote_loging(port=8895):
+    import os, socket
+
+    username = os.getlogin()
+    hostname = socket.gethostname()
+    client_cm = "ssh -NL localhost:{port}:localhost:{port} {username}@{hostname}".format(username=username,
+            hostname=hostname,
+            port=port)
+    print(client_cm)
 
 def open_browser(app, host, port, struc=None, traj=None, remote=False):
     url = "http://" + host + ":" + str(port) + "/webapp"
@@ -369,10 +378,12 @@ def open_browser(app, host, port, struc=None, traj=None, remote=False):
         if traj:
             url += "&traj=file://cwd/" + traj
     if remote:
-        print("")
-        print("copy and paste below to your web browser in local machine")
+        print("\n")
+        print("copy and paste below to your local machine terminal")
+        get_remote_loging(port=port)
+        print("\nThen copy and paste below to your web browser in local machine")
         print(url)
-        print("")
+        print("\n")
     else:
         if not app.config.get("BROWSER_OPENED", False):
             import webbrowser
