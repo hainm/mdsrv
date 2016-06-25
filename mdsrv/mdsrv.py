@@ -250,13 +250,15 @@ def parse_args():
         type=str,
         nargs='?',
         default="",
-        help="Path to a structure/topology file. Supported are pdb, gro and cif files. The file must be included within the current working directory (cwd) or a sub directory.")
+        help="Path to a structure/topology file. Supported are pdb, gro and cif files.\
+        The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         'traj',
         type=str,
         nargs='?',
         default="",
-        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files. The file must be included within the current working directory (cwd) or a sub directory.")
+        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files.\
+        The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         '--cfg',
         type=str,
@@ -265,12 +267,19 @@ def parse_args():
         '--host',
         type=str,
         default="127.0.0.1",
-        help="Host for the server. The default is 127.0.0.1/localhost. To make the server available to other clients set to your IP address or to 0.0.0.0 for automatic host determination. Is overwritten by the PORT in a config file.")
+        help="Host for the server. The default is 127.0.0.1/localhost.\
+        To make the server available to other clients set to your IP address or to 0.0.0.0 for automatic host determination.\
+        Is overwritten by the PORT in a config file.")
     parser.add_argument(
         '--port',
         type=int,
         default=0,
-        help="Port to bind the server to. The default is 0 for automatic choosing of a free port. Fails when the given port is already in use on your machine. Is overwritten by the PORT in a config file.")
+        help="Port to bind the server to. The default is 0 for automatic choosing of a free port.\
+        Fails when the given port is already in use on your machine. Is overwritten by the PORT in a config file.")
+    parser.add_argument(
+        '--remote',
+        action='store_true',
+        help="remote with port forwarding")
     args = parser.parse_args()
     return args
 
@@ -353,16 +362,22 @@ def traj_path(index, root, filename):
 # main
 ############################
 
-def open_browser(app, host, port, struc=None, traj=None):
-    if not app.config.get("BROWSER_OPENED", False):
-        import webbrowser
-        url = "http://" + host + ":" + str(port) + "/webapp"
-        if struc:
-            url += "?struc=file://cwd/" + struc
-            if traj:
-                url += "&traj=file://cwd/" + traj
-        webbrowser.open(url, new=2, autoraise=True)
-        app.config.BROWSER_OPENED = True
+def open_browser(app, host, port, struc=None, traj=None, remote=False):
+    url = "http://" + host + ":" + str(port) + "/webapp"
+    if struc:
+        url += "?struc=file://cwd/" + struc
+        if traj:
+            url += "&traj=file://cwd/" + traj
+    if remote:
+        print("")
+        print("copy and paste below to your web browser in local machine")
+        print(url)
+        print("")
+    else:
+        if not app.config.get("BROWSER_OPENED", False):
+            import webbrowser
+            webbrowser.open(url, new=2, autoraise=True)
+            app.config.BROWSER_OPENED = True
 
 
 # based on http://stackoverflow.com/a/27598916
@@ -413,7 +428,7 @@ def main():
     app.config["DATA_DIRS"] = DATA_DIRS
 
     def on_bind(host, port):
-        open_browser(app, host, port, args.struc, args.traj)
+        open_browser(app, host, port, args.struc, args.traj, args.remote)
     patch_socket_bind(on_bind)
     app.run(
         debug=app.config.get('DEBUG', False),
