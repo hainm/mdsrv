@@ -416,10 +416,12 @@ def entry_point():
 def main():
     args = parse_args()
     print(args.struc, args.traj)
-    traj = pytraj.iterload(args.traj, args.struc)
-    tn = '__tmp_pytraj.pdb'
-    traj[:1].save(tn, overwrite=True)
-    args.struc = tn
+
+    if args.traj:
+        traj = pytraj.iterload(args.traj, args.struc)
+        tn = '__tmp_pytraj.pdb'
+        traj[:1].save(tn, overwrite=True)
+        args.struc = tn
 
     app_config(args.cfg)
     DATA_DIRS = app.config.get("DATA_DIRS", {})
