@@ -6,7 +6,10 @@ from __future__ import print_function
 
 import os
 import sys
+import pwd
 import json
+import array
+import numpy as np
 import logging
 import datetime
 import functools
@@ -22,6 +25,7 @@ except NameError:
         return isinstance(s, str)
 
 import pytraj
+from .contrib import RemoteTrajectoryIterator
 
 from flask import Flask
 from flask import send_from_directory
@@ -250,13 +254,15 @@ def parse_args():
         type=str,
         nargs='?',
         default="",
-        help="Path to a structure/topology file. Supported are pdb, gro and cif files. The file must be included within the current working directory (cwd) or a sub directory.")
+        help="Path to a structure/topology file. Supported are pdb, gro and cif files.\
+        The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         'traj',
         type=str,
         nargs='?',
         default="",
-        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files. The file must be included within the current working directory (cwd) or a sub directory.")
+        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files.\
+        The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         '--cfg',
         type=str,
@@ -265,40 +271,29 @@ def parse_args():
         '--host',
         type=str,
         default="127.0.0.1",
-        help="Host for the server. The default is 127.0.0.1/localhost. To make the server available to other clients set to your IP address or to 0.0.0.0 for automatic host determination. Is overwritten by the PORT in a config file.")
+        help="Host for the server. The default is 127.0.0.1/localhost.\
+        To make the server available to other clients set to your IP address or to 0.0.0.0 for automatic host determination.\
+        Is overwritten by the PORT in a config file.")
     parser.add_argument(
         '--port',
         type=int,
         default=0,
-        help="Port to bind the server to. The default is 0 for automatic choosing of a free port. Fails when the given port is already in use on your machine. Is overwritten by the PORT in a config file.")
+        help="Port to bind the server to. The default is 0 for automatic choosing of a free port.\
+        Fails when the given port is already in use on your machine. Is overwritten by the PORT in a config file.")
+    parser.add_argument(
+        '--remote',
+        action='store_true',
+        help="remote with port forwarding")
+    parser.add_argument(
+        '--no-browser',
+        action='store_true',
+        help="")
     args = parser.parse_args()
     return args
 
 
-class TrajectoryCache(pytraj.TrajectoryIterator):
-
-    count = 0
-    def get(self, path):
-        if self.count == 0:
-            print('count', self.count)
-            self._load(path)
-            self.count += 1
-
-        return self
-
-    def get_frame_string(self, index, **kwargs):
-        import array
-
-        frame = self[index]
-        return (
-            array.array("i", [self.n_frames, ]).tobytes() +
-            array.array("f", [frame.time, ]).tobytes() +
-            array.array("f", frame.box.values.flatten()).tobytes() +
-            array.array("f", frame.xyz.flatten()).tobytes()
-        )
-
 args = parse_args()
-TRAJ_CACHE = TrajectoryCache(top=args.struc)
+TRAJ_REMOTE = RemoteTrajectoryIterator(top=args.struc)
 
 @app.route('/traj/frame/<int:frame>/<root>/<path:filename>', methods=['POST'])
 @requires_auth
@@ -315,7 +310,7 @@ def traj_frame(frame, root, filename):
             [int(y) for y in x.split(",")]
             for x in atom_indices.split(";")
         ]
-    return TRAJ_CACHE.get(path).get_frame_string(
+    return TRAJ_REMOTE.get(path).get_frame_string(
         frame, atom_indices=atom_indices
     )
 
@@ -329,7 +324,7 @@ def traj_numframes(root, filename):
         path = os.path.join(directory, filename)
     else:
         return
-    return str(TRAJ_CACHE.get(path).n_frames)
+    return str(TRAJ_REMOTE.get(path).n_frames)
 
 
 @app.route('/traj/path/<int:index>/<root>/<path:filename>', methods=['POST'])
@@ -344,7 +339,7 @@ def traj_path(index, root, filename):
     frame_indices = request.form.get("frameIndices")
     if frame_indices:
         frame_indices = None
-    return TRAJ_CACHE.get(path).get_path_string(
+    return TRAJ_REMOTE.get(path).get_path_string(
         index, frame_indices=frame_indices
     )
 
@@ -352,17 +347,41 @@ def traj_path(index, root, filename):
 ############################
 # main
 ############################
+def get_remote_login(port=8895):
+    import os, socket
 
-def open_browser(app, host, port, struc=None, traj=None):
-    if not app.config.get("BROWSER_OPENED", False):
-        import webbrowser
-        url = "http://" + host + ":" + str(port) + "/webapp"
-        if struc:
-            url += "?struc=file://cwd/" + struc
-            if traj:
-                url += "&traj=file://cwd/" + traj
-        webbrowser.open(url, new=2, autoraise=True)
-        app.config.BROWSER_OPENED = True
+    username = pwd.getpwuid(os.getuid())[0]
+    hostname = socket.gethostname()
+    client_cm = "\n    \033[32m ssh -NL localhost:{port}:localhost:{port} {username}@{hostname} \033[0m \n".format(username=username,
+            hostname=hostname,
+            port=port)
+    print(client_cm)
+
+def get_url(host, port, struc=None, traj=None):
+    url = "http://" + host + ":" + str(port) + "/webapp"
+    if struc:
+        url += "?struc=file://cwd/" + struc
+        if traj:
+            url += "&traj=file://cwd/" + traj
+    return url
+
+def open_browser(app, host, port, struc=None, traj=None, remote=False, browser=True):
+    url = get_url(host, port, struc=struc, traj=traj)
+    print(url)
+
+    if remote:
+        print("\n")
+        print("copy and paste below to your local machine terminal")
+        get_remote_login(port=port)
+        print("\nThen copy and paste below to your web browser in local machine")
+        print("\n    \033[32m" + url + "\033[0m")
+        print("\n")
+    else:
+        if browser:
+            if not app.config.get("BROWSER_OPENED", False):
+                import webbrowser
+                webbrowser.open(url, new=2, autoraise=True)
+                app.config.BROWSER_OPENED = True
 
 
 # based on http://stackoverflow.com/a/27598916
@@ -382,9 +401,6 @@ def patch_socket_bind(on_bind):
         socketserver.TCPServer.server_bind = original_socket_bind
         return ret
     socketserver.TCPServer.server_bind = socket_bind_wrapper
-
-
-
 
 def app_config(path):
     if path:
@@ -412,8 +428,9 @@ def main():
     })
     app.config["DATA_DIRS"] = DATA_DIRS
 
+    browser = not args.no_browser
     def on_bind(host, port):
-        open_browser(app, host, port, args.struc, args.traj)
+        open_browser(app, host, port, args.struc, args.traj, args.remote, browser)
     patch_socket_bind(on_bind)
     app.run(
         debug=app.config.get('DEBUG', False),
@@ -425,10 +442,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        try:
-            os.remove('__tmp_pytraj.pdb')
-        except OSError:
-            print("hello")
+    main()
