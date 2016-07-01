@@ -2,7 +2,20 @@ import array
 import numpy as np
 import pytraj
 
-class RemoteTrajectoryIterator(pytraj.TrajectoryIterator):
+class BaseRemoteTrajectory(object):
+    def get(self, path):
+        raise NotImplementedError
+
+    def get_frame_string(self, index, **kwargs):
+        raise NotImplementedError
+
+    def get_path(self, atom_index, frame_indices):
+        raise NotImplementedError
+
+    def get_path_string(self, atom_index, frame_indices=None):
+        raise NotImplementedError
+
+class RemoteTrajectoryIterator(BaseRemoteTrajectory, pytraj.TrajectoryIterator):
 
     count = 0
     def get(self, path):
