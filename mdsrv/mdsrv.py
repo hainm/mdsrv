@@ -9,10 +9,11 @@ import sys
 import pwd
 import json
 import array
-import numpy as np
+import signal
 import logging
 import datetime
 import functools
+import numpy as np
 
 # python 2 and 3 compatibility
 try:
@@ -419,7 +420,7 @@ def main():
 
     if args.traj:
         traj = pytraj.iterload(args.traj, args.struc)
-        tn = '__tmp_pytraj.pdb'
+        tn = 'tmp_pytraj.pdb'
         traj[:1].save(tn, overwrite=True)
         args.struc = tn
 
@@ -434,6 +435,17 @@ def main():
     def on_bind(host, port):
         open_browser(app, host, port, args.struc, args.traj, args.remote, browser)
     patch_socket_bind(on_bind)
+
+    def signal_handler(signal, frame):
+        try:
+            os.remove('tmp_pytraj.pdb')
+        except OSError:
+            pass
+
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
     app.run(
         debug=app.config.get('DEBUG', False),
         host=app.config.get('HOST', args.host),
