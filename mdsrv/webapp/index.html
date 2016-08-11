@@ -48,14 +48,15 @@
             stage = new NGL.Stage();
             NGL.StageWidget( stage );
 
-            var load = NGL.GET( "load" );
+            var load = NGL.getQuery( "load" );
             if( load ) stage.loadFile( load, { defaultRepresentation: true } );
 
-            var struc = NGL.GET( "struc" );
-            var traj = NGL.GET( "traj" );
+            var struc = NGL.getQuery( "struc" );
+            var traj = NGL.getQuery( "traj" );
             if( struc ){
                 var params = { defaultRepresentation: true };
                 stage.loadFile( struc, params ).then( function( o ){
+                    console.log('traj' + traj);
                     if( traj ) o.addTrajectory( traj );
                 } );
             }

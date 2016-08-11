@@ -22,27 +22,27 @@ var MdsrvDatasource = function( baseUrl ){
     };
 
     this.getUrl = function( src ){
-        var info = NGL.getFileInfo( src );
+        var info = NGL.getDataInfo( src );
         return baseUrl + "file/" + info.path;
     };
 
     this.getNumframesUrl = function( src ){
-        var info = NGL.getFileInfo( src );
+        var info = NGL.getDataInfo( src );
         return baseUrl + "traj/numframes/" + info.path;
     };
 
     this.getFrameUrl = function( src, frameIndex ){
-        var info = NGL.getFileInfo( src );
+        var info = NGL.getDataInfo( src );
         return baseUrl + "traj/frame/" + frameIndex + "/" + info.path;
     };
 
     this.getFrameParams = function( src, atomIndices ){
-        var info = NGL.getFileInfo( src );
+        var info = NGL.getDataInfo( src );
         return "atomIndices=" + atomIndices.join(";");
     };
 
     this.getPathUrl = function( src, atomIndex ){
-        var info = NGL.getFileInfo( src );
+        var info = NGL.getDataInfo( src );
         return baseUrl + "traj/path/" + atomIndex + "/" + info.path;
     };
 
