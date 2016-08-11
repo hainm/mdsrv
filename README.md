@@ -29,6 +29,8 @@ How does the UI look like? http://arose.github.io/ngl/
 
 Interested in using NGL in Jupyter notebook? Please visit https://github.com/arose/nglview
 
+![image](./screenshot.png)
+
 Original `README.md`
 ====================
 
