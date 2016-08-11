@@ -255,14 +255,14 @@ def parse_args():
         type=str,
         nargs='?',
         default="",
-        help="Path to a structure/topology file. Supported are pdb, gro and cif files.\
+        help="Path to a structure/topology file. Supported are pdb, cif, any AMBER topology file format (prmtop, mol2, ...) \
         The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         'traj',
         type=str,
         nargs='?',
         default="",
-        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files.\
+        help="Path to a trajectory file. Supported are xtc/trr, nc, mdcrd, rst7 (or any AMBER formats), and dcd files.\
         The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         '--cfg',
@@ -443,7 +443,7 @@ def main():
         try:
             print("cleaning temporary file")
             os.remove(tmpl_filename)
-        except OSError:
+        except (TypeError, OSError):
             pass
 
         sys.exit(0)
