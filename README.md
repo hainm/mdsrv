@@ -7,6 +7,9 @@ Install
 git clone https://github.com/Amber-MD/mdsrv
 cd mdsrv
 python setup.py install
+
+# or do the shortcut without git cloning
+pip install git+https://github.com/Amber-MD/mdsrv
 ```
 
 Require
