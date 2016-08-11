@@ -10,6 +10,9 @@ python setup.py install
 
 # or do the shortcut without git cloning
 pip install git+https://github.com/Amber-MD/mdsrv
+
+# AMBER users
+amber.pip install git+https://github.com/Amber-MD/mdsrv --prefix=$AMBERHOME
 ```
 
 Require
