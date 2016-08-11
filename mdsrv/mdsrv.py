@@ -420,7 +420,9 @@ def main():
 
     if args.traj:
         traj = pytraj.iterload(args.traj, args.struc)
-        tn = 'tmp_pytraj.pdb'
+        basename = os.path.basename(args.struc)
+        tn = basename.split('.')[0] + '.pytraj.pdb'
+        print(tn)
         traj[:1].save(tn, overwrite=True)
         args.struc = tn
 
