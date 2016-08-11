@@ -27,7 +27,7 @@ mdsrv my.parm7 my.nc
 
 How does the UI look like? http://arose.github.io/ngl/
 
-Intested in using NGL in Jupyter notebook? Please visit https://github.com/arose/nglview
+Interested in using NGL in Jupyter notebook? Please visit https://github.com/arose/nglview
 
 Original `README.md`
 ====================
