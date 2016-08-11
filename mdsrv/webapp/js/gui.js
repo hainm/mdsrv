@@ -450,9 +450,10 @@ NGL.MenubarWidget = function( stage, preferences ){
 
     container.add( new NGL.MenubarFileWidget( stage ) );
     container.add( new NGL.MenubarViewWidget( stage, preferences ) );
-    if( NGL.ExampleRegistry.count > 0 ){
-        container.add( new NGL.MenubarExamplesWidget( stage ) );
-    }
+    // turn off Examples for now
+    // if( NGL.ExampleRegistry.count > 0 ){
+    //     container.add( new NGL.MenubarExamplesWidget( stage ) );
+    // }
     if( NGL.PluginRegistry.count > 0 ){
         container.add( new NGL.MenubarPluginsWidget( stage ) );
     }
