@@ -418,13 +418,14 @@ def main():
     args = parse_args()
     print(args.struc, args.traj)
 
+    tmpl_filename = None
+
     if args.traj:
         traj = pytraj.iterload(args.traj, args.struc)
         basename = os.path.basename(args.struc)
-        tn = basename.split('.')[0] + '.pytraj.pdb'
-        print(tn)
-        traj[:1].save(tn, overwrite=True)
-        args.struc = tn
+        tmpl_filename = basename.split('.')[0] + '.pytraj.pdb'
+        traj[:1].save(tmpl_filename, overwrite=True)
+        args.struc = tmpl_filename
 
     app_config(args.cfg)
     DATA_DIRS = app.config.get("DATA_DIRS", {})
@@ -440,7 +441,8 @@ def main():
 
     def signal_handler(signal, frame):
         try:
-            os.remove('tmp_pytraj.pdb')
+            print("cleaning temporary file")
+            os.remove(tmpl_filename)
         except OSError:
             pass
 
