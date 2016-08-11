@@ -9,6 +9,13 @@ cd mdsrv
 python setup.py install
 ```
 
+Require
+=======
+
+- [pytraj](https://github.com/amber-md/pytraj)
+- A modern web browser
+- flask
+
 Usage
 =====
 
