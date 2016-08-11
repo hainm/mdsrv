@@ -1,3 +1,26 @@
+This repo is a fork from https://github.com/arose/mdsrv, mostly to be used with `pytraj`.
+
+Install
+=======
+
+```bash
+git clone https://github.com/Amber-MD/mdsrv
+cd mdsrv
+python setup.py install
+```
+
+Usage
+=====
+
+In your shell terminal
+
+```bash
+mdsrv my.parm7 -c my.nc
+```
+
+How does the UI look like? http://arose.github.io/ngl/
+
+** Original `README.md` **
 
 MDsrv is a simple server that enables remote access to coordinate trajectories from molecular dynamics simulations. It can be used together with the NGL Viewer (http://github.com/arose/ngl) to interactively view trajectories of molecular complexes in a web-browser, either within a local network or from anywhere over the internet.
 
