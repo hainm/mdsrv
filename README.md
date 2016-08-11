@@ -22,7 +22,7 @@ Usage
 In your shell terminal
 
 ```bash
-mdsrv my.parm7 -c my.nc
+mdsrv my.parm7 my.nc
 ```
 
 How does the UI look like? http://arose.github.io/ngl/
