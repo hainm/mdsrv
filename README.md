@@ -7,6 +7,12 @@ Install
 git clone https://github.com/Amber-MD/mdsrv
 cd mdsrv
 python setup.py install
+
+# or do the shortcut without git cloning
+pip install git+https://github.com/Amber-MD/mdsrv
+
+# AMBER users
+amber.pip install git+https://github.com/Amber-MD/mdsrv --prefix=$AMBERHOME
 ```
 
 Require
@@ -28,6 +34,8 @@ mdsrv my.parm7 my.nc
 How does the UI look like? http://arose.github.io/ngl/
 
 Interested in using NGL in Jupyter notebook? Please visit https://github.com/arose/nglview
+
+![image](./screenshot.png)
 
 Original `README.md`
 ====================

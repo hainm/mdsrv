@@ -255,14 +255,14 @@ def parse_args():
         type=str,
         nargs='?',
         default="",
-        help="Path to a structure/topology file. Supported are pdb, gro and cif files.\
+        help="Path to a structure/topology file. Supported are pdb, cif, any AMBER topology file format (prmtop, mol2, ...) \
         The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         'traj',
         type=str,
         nargs='?',
         default="",
-        help="Path to a trajectory file. Supported are xtc/trr, nc and dcd files.\
+        help="Path to a trajectory file. Supported are xtc/trr, nc, mdcrd, rst7 (or any AMBER formats), and dcd files.\
         The file must be included within the current working directory (cwd) or a sub directory.")
     parser.add_argument(
         '--cfg',
@@ -418,11 +418,14 @@ def main():
     args = parse_args()
     print(args.struc, args.traj)
 
+    tmpl_filename = None
+
     if args.traj:
         traj = pytraj.iterload(args.traj, args.struc)
-        tn = 'tmp_pytraj.pdb'
-        traj[:1].save(tn, overwrite=True)
-        args.struc = tn
+        basename = os.path.basename(args.struc)
+        tmpl_filename = basename.split('.')[0] + '.pytraj.pdb'
+        traj[:1].save(tmpl_filename, overwrite=True)
+        args.struc = tmpl_filename
 
     app_config(args.cfg)
     DATA_DIRS = app.config.get("DATA_DIRS", {})
@@ -438,8 +441,9 @@ def main():
 
     def signal_handler(signal, frame):
         try:
-            os.remove('tmp_pytraj.pdb')
-        except OSError:
+            print("cleaning temporary file")
+            os.remove(tmpl_filename)
+        except (TypeError, OSError):
             pass
 
         sys.exit(0)
